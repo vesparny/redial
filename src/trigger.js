@@ -1,5 +1,7 @@
 import propName from './propName';
 
+const isPromise = (obj) => typeof obj.then === 'function';
+
 export default (name, components, locals) => {
   const promises = (Array.isArray(components) ? components : [components])
 
@@ -19,10 +21,21 @@ export default (name, components, locals) => {
       if (typeof hook !== 'function') {
         return;
       }
-
-      return typeof locals === 'function' ?
+      const runningHook = locals === 'function' ?
         hook(locals(component)) :
         hook(locals)
+
+        return isPromise(runningHook) ?
+          runningHook :
+          new Promise((resolve, reject) => {
+            runningHook((err) => {
+              if (err) {
+                reject(err)
+              }else {
+                resolve()
+              }
+            })
+          })
     });
 
   return Promise.all(promises);
